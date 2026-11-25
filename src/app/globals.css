@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --canvas: #fbfbfd;
+  --surface: #ffffff;
+  --surface-muted: #f4f6fb;
+  --ink: #13151a;
+  --ink-secondary: #525866;
+  --border-subtle: #e5e8f0;
+  --brand-gradient: linear-gradient(
+    135deg,
+    #38bdf8 0%,
+    #2563eb 28%,
+    #8b5cf6 56%,
+    #ec4899 80%,
+    #f97316 100%
+  );
+}
+
+.dark {
+  --canvas: #070b14;
+  --surface: #0f1629;
+  --surface-muted: #151e34;
+  --ink: #f8fafc;
+  --ink-secondary: #94a3b8;
+  --border-subtle: rgba(148, 163, 184, 0.16);
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display), system-ui, -apple-system, sans-serif;
+}
+
+.hero-headline {
+  font-size: clamp(3.75rem, 9.2vw, 7.5rem);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+}
+
+/* Signature Holo-inspired multi-stop gradient border */
+.gradient-border-card {
+  position: relative;
+  background: var(--brand-gradient);
+  padding: 2px;
+  border-radius: 28px;
+}
+
+.gradient-border-inner {
+  background: var(--surface);
+  border-radius: 26px;
+  height: 100%;
+  width: 100%;
+}
+
+/* Crisp glassmorphism tuned for both Light and Dark themes */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 10px 35px -10px rgba(15, 23, 42, 0.08);
+}
+
+.dark .glass-nav {
+  background: rgba(15, 22, 41, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.55);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  box-shadow: 0 14px 36px -14px rgba(15, 23, 42, 0.08);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.5);
+}
+
+.text-brand-gradient {
+  background: linear-gradient(
+    115deg,
+    #0284c7 0%,
+    #2563eb 32%,
+    #7c3aed 64%,
+    #db2777 88%,
+    #ea580c 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .text-brand-gradient {
+  background: linear-gradient(
+    115deg,
+    #38bdf8 0%,
+    #60a5fa 32%,
+    #a78bfa 64%,
+    #f472b6 88%,
+    #fb923c 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-brand {
+  background: linear-gradient(
+    120deg,
+    #0ea5e9 0%,
+    #2563eb 38%,
+    #7c3aed 72%,
+    #ec4899 100%
+  );
+  color: #ffffff;
+  box-shadow: 0 10px 26px -6px rgba(37, 99, 235, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-brand:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 14px 30px -6px rgba(37, 99, 235, 0.55);
+}
+
+.btn-brand:active {
+  transform: translateY(0px);
+}
+
+/* Animations */
+@keyframes float-gentle {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float-gentle 4.6s ease-in-out infinite;
+}
+
+@keyframes wave-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.32);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.wave-bar {
+  transform-origin: center;
+  animation: wave-pulse 1.15s ease-in-out infinite;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Smooth Reels-style auto-swiping horizontal reviews track */
+@keyframes reels-swipe-left {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.reels-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: reels-swipe-left 36s linear infinite;
+}
+
+.reels-viewport:hover .reels-track,
+.reels-viewport:focus-within .reels-track {
+  animation-play-state: paused;
+}
+
+/* Animated glowing brand gradient sweep for Connect Instagram card */
+@keyframes gradient-glow-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.ig-glow-border {
+  background: linear-gradient(
+    120deg,
+    #38bdf8,
+    #2563eb,
+    #8b5cf6,
+    #ec4899,
+    #f97316,
+    #38bdf8
+  );
+  background-size: 260% 260%;
+  animation: gradient-glow-shift 5s ease infinite;
+}
+
+/* Subtle dot pattern backdrop */
+.bg-subtle-grid {
+  background-image: radial-gradient(rgba(100, 116, 139, 0.16) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.dark .bg-subtle-grid {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
