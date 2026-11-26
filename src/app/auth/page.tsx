@@ -235,7 +235,7 @@ export default function AuthAndOnboardingPage() {
       igHandle,
       igConnected: igState === "connected",
     });
-    router.push("/dashboard");
+    router.push("/dashboard?tour=welcome");
   };
 
   return (

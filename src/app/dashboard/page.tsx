@@ -22,19 +22,18 @@ import {
   type AlphadoUserProfile,
 } from "@/components/dashboard/types";
 import { HomeOverviewTab } from "@/components/dashboard/HomeOverviewTab";
+import {
+  PlatformTour,
+  PLATFORM_TOUR_STEPS,
+  type TourTab,
+} from "@/components/dashboard/PlatformTour";
 import { ProductsAndAdsTab } from "@/components/dashboard/ProductsAndAdsTab";
 import { AlphadoBrandTab } from "@/components/dashboard/AlphadoBrandTab";
 import { ContentStudioTab } from "@/components/dashboard/ContentStudioTab";
 import { CallsAndChatTab } from "@/components/dashboard/CallsAndChatTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
 
-type DashboardTab =
-  | "home"
-  | "products"
-  | "alphado"
-  | "content"
-  | "calls"
-  | "settings";
+type DashboardTab = TourTab;
 
 const navItems: {
   id: DashboardTab;
@@ -65,10 +64,33 @@ export default function DashboardPage() {
   );
   const [activeTab, setActiveTab] = useState<DashboardTab>("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tourStep, setTourStep] = useState<number | null>(null);
 
   useEffect(() => {
     setProfile(loadUserProfile());
+
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.get("tour") === "welcome") {
+      setTourStep(0);
+      currentUrl.searchParams.delete("tour");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+      );
+    }
   }, []);
+
+  useEffect(() => {
+    if (tourStep === null) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setTourStep(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [tourStep]);
 
   const handleUpdateProfile = (next: AlphadoUserProfile) => {
     setProfile(next);
@@ -78,6 +100,35 @@ export default function DashboardPage() {
   const handleSelectTab = (tab: DashboardTab) => {
     setActiveTab(tab);
     setMobileMenuOpen(false);
+
+    if (tourStep !== null) {
+      const selectedStep = PLATFORM_TOUR_STEPS.findIndex(
+        (step) => step.tab === tab
+      );
+      if (selectedStep >= 0) setTourStep(selectedStep);
+    }
+  };
+
+  const navigateTour = (stepIndex: number) => {
+    const step = PLATFORM_TOUR_STEPS[stepIndex];
+    if (!step) return;
+    setActiveTab(step.tab);
+    setTourStep(stepIndex);
+    setMobileMenuOpen(false);
+  };
+
+  const handleTourNext = () => {
+    if (tourStep === null) return;
+    if (tourStep === PLATFORM_TOUR_STEPS.length - 1) {
+      setTourStep(null);
+      return;
+    }
+    navigateTour(tourStep + 1);
+  };
+
+  const handleTourPrevious = () => {
+    if (tourStep === null || tourStep === 0) return;
+    navigateTour(tourStep - 1);
   };
 
   const userInitial = (profile.firstName || "A").charAt(0).toUpperCase();
@@ -85,7 +136,11 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)] flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sticky top-0 h-screen">
+      <aside
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex lg:w-64 ${
+          tourStep !== null ? "z-40" : ""
+        }`}
+      >
         {/* Brand Logo */}
         <div className="flex items-center gap-2.5 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
           <Link href="/" className="flex items-center gap-2.5 min-w-0">
@@ -115,15 +170,21 @@ export default function DashboardPage() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const isTourTarget =
+              tourStep !== null && PLATFORM_TOUR_STEPS[tourStep]?.tab === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => handleSelectTab(item.id)}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-bold transition-colors cursor-pointer ${
+                className={`relative flex w-full items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-sm font-bold transition-colors cursor-pointer ${
                   isActive
-                    ? "bg-gradient-to-r from-sky-500/14 via-indigo-500/12 to-pink-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-500/30"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white border border-transparent"
+                    ? "bg-gradient-to-r from-sky-500/14 via-indigo-500/12 to-pink-500/10 text-sky-700 dark:text-sky-300 border-sky-200/80 dark:border-sky-500/30"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white border-transparent"
+                } ${
+                  isTourTarget
+                    ? "z-40 ring-2 ring-sky-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-950"
+                    : ""
                 }`}
               >
                 <Icon
@@ -207,6 +268,8 @@ export default function DashboardPage() {
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
+                const isTourTarget =
+                  tourStep !== null && PLATFORM_TOUR_STEPS[tourStep]?.tab === item.id;
                 return (
                   <button
                     key={item.id}
@@ -216,6 +279,10 @@ export default function DashboardPage() {
                       isActive
                         ? "bg-sky-500/12 text-sky-700 dark:text-sky-300"
                         : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
+                    } ${
+                      isTourTarget
+                        ? "relative z-40 rounded-2xl ring-2 ring-sky-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-950"
+                        : ""
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -273,6 +340,17 @@ export default function DashboardPage() {
 
             <button
               type="button"
+              onClick={() => navigateTour(0)}
+              aria-label="Take the platform tour"
+              title="Take the platform tour"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-sky-500/40 dark:hover:bg-slate-800 dark:hover:text-sky-300"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+              <span className="hidden sm:inline">Take tour</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleSelectTab("settings")}
               aria-label="Open account settings"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-300/80 font-display text-xs font-extrabold text-slate-900 dark:bg-sky-500/30 dark:text-sky-100 overflow-hidden cursor-pointer"
@@ -308,6 +386,15 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {tourStep !== null && (
+        <PlatformTour
+          stepIndex={tourStep}
+          onPrevious={handleTourPrevious}
+          onNext={handleTourNext}
+          onClose={() => setTourStep(null)}
+        />
+      )}
     </div>
   );
 }
