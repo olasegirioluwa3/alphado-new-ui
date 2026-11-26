@@ -38,14 +38,15 @@ type DashboardTab = TourTab;
 const navItems: {
   id: DashboardTab;
   label: string;
+  mobileLabel: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  { id: "home", label: "Home", icon: Home },
-  { id: "products", label: "Products", icon: PackagePlus },
-  { id: "alphado", label: "Alphado", icon: Sparkles },
-  { id: "content", label: "Content Studio", icon: PenTool },
-  { id: "calls", label: "Calls", icon: PhoneCall },
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "home", label: "Home", mobileLabel: "Home", icon: Home },
+  { id: "products", label: "Products", mobileLabel: "Products", icon: PackagePlus },
+  { id: "alphado", label: "Alphado", mobileLabel: "Alphado", icon: Sparkles },
+  { id: "content", label: "Content Studio", mobileLabel: "Content", icon: PenTool },
+  { id: "calls", label: "Calls", mobileLabel: "Calls", icon: PhoneCall },
+  { id: "settings", label: "Settings", mobileLabel: "Settings", icon: Settings },
 ];
 
 const headerTitles: Record<DashboardTab, string> = {
@@ -232,7 +233,7 @@ export default function DashboardPage() {
 
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
+        <div className="fixed inset-0 z-50 hidden md:flex lg:hidden">
           <div
             className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs"
             onClick={() => setMobileMenuOpen(false)}
@@ -304,7 +305,7 @@ export default function DashboardPage() {
               type="button"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open navigation menu"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 lg:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="hidden h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 md:flex lg:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
               <Menu className="h-4 w-4" />
             </button>
@@ -369,7 +370,7 @@ export default function DashboardPage() {
         </header>
 
         {/* Active Workspace */}
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 sm:px-6 md:pb-6 lg:px-8 lg:py-8">
           {activeTab === "home" && (
             <HomeOverviewTab profile={profile} onNavigate={handleSelectTab} />
           )}
@@ -386,6 +387,35 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      <nav
+        aria-label="Primary navigation"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-slate-200 bg-white/95 px-1 pt-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_-18px_rgba(15,23,42,0.35)] backdrop-blur-lg md:hidden dark:border-slate-800 dark:bg-slate-950/95"
+      >
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleSelectTab(item.id)}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
+              className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 ${
+                isActive
+                  ? "text-sky-700 dark:text-sky-300"
+                  : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              }`}
+            >
+              <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span className="w-full truncate text-[9px] font-semibold leading-none">
+                {item.mobileLabel}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
 
       {tourStep !== null && (
         <PlatformTour

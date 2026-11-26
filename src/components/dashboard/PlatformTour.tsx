@@ -69,7 +69,7 @@ export function PlatformTour({
       />
       <aside
         aria-label="Alphado platform tour"
-        className="fixed inset-x-4 bottom-4 z-50 mx-auto max-h-[78vh] w-auto max-w-[440px] overflow-y-auto rounded-[28px] border border-slate-200/90 bg-white p-5 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.5)] sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[min(440px,calc(100vw-3rem))] sm:p-6 dark:border-slate-700 dark:bg-slate-950"
+        className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-h-[78vh] w-auto max-w-[440px] overflow-y-auto rounded-[28px] border border-slate-200/90 bg-white p-5 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.5)] sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[min(440px,calc(100vw-3rem))] sm:p-6 dark:border-slate-700 dark:bg-slate-950"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
