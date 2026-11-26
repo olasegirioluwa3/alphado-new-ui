@@ -21,4 +21,5 @@ npm start
 ## Routes
 
 - `/` — Alphado Landing Page (Light Mode default with full Dark Mode toggle)
-- `/auth` — Email Sign-Up / Login, 6-Digit Verification Code, and Progressive Onboarding (Name, Business Name, Glowing Connect Instagram flow)
+- `/auth` — Email Sign-Up / Login, 6-Digit Verification Code, and Progressive Onboarding (Name, Business Name, Glowing Connect Instagram flow -> routes straight to `/dashboard`)
+- `/dashboard` — Full Alphado Workspace (Home Earnings & Analytics, Products Publish/Create, Running Ads, Merged Chat + Live Call UI, Call Logs with AI Summaries, and Apple-style Settings)

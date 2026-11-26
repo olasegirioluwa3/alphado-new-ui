@@ -2,28 +2,37 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Check,
   CheckCircle2,
+  Eye,
+  EyeOff,
   Instagram,
   Loader2,
   Moon,
-  Sparkles,
   Sun,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import { saveUserProfile } from "@/components/dashboard/types";
 
-type FlowStep = "email" | "verify" | "name" | "business" | "instagram" | "done";
+type FlowStep =
+  | "email"
+  | "verify"
+  | "password"
+  | "name"
+  | "business"
+  | "instagram";
 
 const stepOrder: FlowStep[] = [
   "email",
   "verify",
+  "password",
   "name",
   "business",
   "instagram",
-  "done",
 ];
 
 function AlphadoLogoMark() {
@@ -44,6 +53,7 @@ function AlphadoLogoMark() {
 }
 
 export default function AuthAndOnboardingPage() {
+  const router = useRouter();
   const { theme, toggleTheme, mounted } = useTheme();
   const [step, setStep] = useState<FlowStep>("email");
 
@@ -57,15 +67,23 @@ export default function AuthAndOnboardingPage() {
   const [resentNotice, setResentNotice] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Step 3: Name
+  // Step 3: Password (right after code verification)
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Step 4: Name
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
-  // Step 4: Business Name
+  // Step 5: Business Name
   const [businessName, setBusinessName] = useState("");
 
-  // Step 5: Connect Instagram
-  const [igState, setIgState] = useState<"idle" | "connecting" | "connected">("idle");
+  // Step 6: Connect Instagram
+  const [igState, setIgState] = useState<"idle" | "connecting" | "connected">(
+    "idle"
+  );
 
   // Focus first OTP box when arriving at verify step
   useEffect(() => {
@@ -76,29 +94,30 @@ export default function AuthAndOnboardingPage() {
   }, [step]);
 
   const currentIdx = stepOrder.indexOf(step);
-  // Progress bar across onboarding steps (shows on name / business / instagram / done, and subtly on verify)
   const onboardingProgress =
     step === "email"
-      ? 15
+      ? 14
       : step === "verify"
-      ? 35
+      ? 28
+      : step === "password"
+      ? 46
       : step === "name"
-      ? 58
+      ? 64
       : step === "business"
-      ? 78
-      : step === "instagram"
-      ? igState === "connected"
-        ? 100
-        : 92
-      : 100;
+      ? 82
+      : igState === "connected"
+      ? 100
+      : 94;
 
   const onboardingStepLabel =
-    step === "name"
-      ? "Step 1 of 3"
+    step === "password"
+      ? "Step 1 of 4"
+      : step === "name"
+      ? "Step 2 of 4"
       : step === "business"
-      ? "Step 2 of 3"
+      ? "Step 3 of 4"
       : step === "instagram"
-      ? "Step 3 of 3"
+      ? "Step 4 of 4"
       : null;
 
   const handleBack = () => {
@@ -160,12 +179,24 @@ export default function AuthAndOnboardingPage() {
   const handleVerifySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isOtpComplete) return;
-    setStep("name");
+    setStep("password");
   };
 
   const handleResend = () => {
     setResentNotice(true);
     setTimeout(() => setResentNotice(false), 3000);
+  };
+
+  const hasMinLen = password.length >= 8;
+  const hasNumOrSymbol = /[0-9!@#$%^&*(),.?":{}|<>_\-+=]/.test(password);
+  const passwordsMatch =
+    password.length > 0 && password === confirmPassword;
+  const isPasswordValid = hasMinLen && hasNumOrSymbol && passwordsMatch;
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isPasswordValid) return;
+    setStep("name");
   };
 
   const handleNameSubmit = (e: React.FormEvent) => {
@@ -195,19 +226,31 @@ export default function AuthAndOnboardingPage() {
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_|_$/g, "");
 
+  const handleEnterDashboard = () => {
+    saveUserProfile({
+      firstName: firstName.trim() || "Alex",
+      lastName: lastName.trim() || "Morgan",
+      email: email.trim() || "alex@alphado.ai",
+      businessName: businessName.trim() || "Aura Studio",
+      igHandle,
+      igConnected: igState === "connected",
+    });
+    router.push("/dashboard");
+  };
+
   return (
     <div className="relative min-h-screen bg-[var(--canvas)] text-[var(--ink)] flex flex-col">
-      {/* Top Progress Bar (Visible smoothly across progression) */}
+      {/* Top Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-slate-200/70 dark:bg-slate-800/80">
         <motion.div
           className="h-full bg-gradient-to-r from-sky-400 via-blue-600 via-violet-500 to-pink-500"
-          initial={{ width: "15%" }}
+          initial={{ width: "14%" }}
           animate={{ width: `${onboardingProgress}%` }}
           transition={{ type: "spring", stiffness: 200, damping: 26 }}
         />
       </div>
 
-      {/* Top Bar: Back Circle Button (exact reference feel) + Theme Toggle */}
+      {/* Top Bar: Back Circle Button + Step Badge + Theme Toggle */}
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 pt-7 sm:px-8">
         {step === "email" ? (
           <Link
@@ -354,7 +397,6 @@ export default function AuthAndOnboardingPage() {
                 )}
 
                 <form onSubmit={handleVerifySubmit} className="mt-7">
-                  {/* 6 Individual Rounded OTP Input Boxes (exact reference feel) */}
                   <div className="flex items-center justify-center gap-2 sm:gap-2.5">
                     {otp.map((digit, i) => (
                       <input
@@ -374,7 +416,6 @@ export default function AuthAndOnboardingPage() {
                     ))}
                   </div>
 
-                  {/* Remember this device */}
                   <label className="mt-5 flex items-center gap-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -402,7 +443,163 @@ export default function AuthAndOnboardingPage() {
               </motion.div>
             )}
 
-            {/* STEP 3: ONBOARDING 1 — FIRST NAME & LAST NAME */}
+            {/* STEP 3: ONBOARDING 1 — CREATE PASSWORD */}
+            {step === "password" && (
+              <motion.div
+                key="step-password"
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -24 }}
+                transition={{ duration: 0.28 }}
+                className="text-center"
+              >
+                <AlphadoLogoMark />
+
+                <div className="mt-5 mx-auto max-w-[220px]">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                    <motion.div
+                      initial={{ width: "0%" }}
+                      animate={{ width: "25%" }}
+                      transition={{ type: "spring", stiffness: 220, damping: 24 }}
+                      className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-600 to-violet-500"
+                    />
+                  </div>
+                </div>
+
+                <h1 className="mt-5 font-display text-2xl sm:text-[1.75rem] font-extrabold tracking-tight text-slate-950 dark:text-white">
+                  Create a password
+                </h1>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  Keep your Alphado workspace and customer lists secure.
+                </p>
+
+                <form
+                  onSubmit={handlePasswordSubmit}
+                  className="mt-7 space-y-3.5 text-left"
+                >
+                  <div>
+                    <label
+                      htmlFor="create-password"
+                      className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300"
+                    >
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="create-password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        autoFocus
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Create a strong password"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-slate-950 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400 dark:focus:border-sky-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="confirm-password"
+                      className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300"
+                    >
+                      Confirm password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter your password"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-slate-950 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400 dark:focus:border-sky-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((v) => !v)}
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide confirm password"
+                            : "Show confirm password"
+                        }
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Clean live password requirements */}
+                  <div className="space-y-1.5 pt-1 text-xs font-medium">
+                    <div
+                      className={`flex items-center gap-2 ${
+                        hasMinLen
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      <span>At least 8 characters</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-2 ${
+                        hasNumOrSymbol
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      <span>Includes a number or symbol</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-2 ${
+                        passwordsMatch
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      <span>Passwords match</span>
+                    </div>
+                  </div>
+
+                  <motion.button
+                    whileHover={isPasswordValid ? { scale: 1.01 } : {}}
+                    whileTap={isPasswordValid ? { scale: 0.98 } : {}}
+                    type="submit"
+                    disabled={!isPasswordValid}
+                    className={`mt-4 w-full rounded-full py-3.5 text-sm font-bold transition-all ${
+                      isPasswordValid
+                        ? "btn-brand cursor-pointer"
+                        : "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Continue
+                  </motion.button>
+                </form>
+              </motion.div>
+            )}
+
+            {/* STEP 4: ONBOARDING 2 — FIRST NAME & LAST NAME */}
             {step === "name" && (
               <motion.div
                 key="step-name"
@@ -414,12 +611,11 @@ export default function AuthAndOnboardingPage() {
               >
                 <AlphadoLogoMark />
 
-                {/* Inline Step Progress Bar */}
                 <div className="mt-5 mx-auto max-w-[220px]">
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                     <motion.div
-                      initial={{ width: "0%" }}
-                      animate={{ width: "33%" }}
+                      initial={{ width: "25%" }}
+                      animate={{ width: "50%" }}
                       transition={{ type: "spring", stiffness: 220, damping: 24 }}
                       className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-600 to-violet-500"
                     />
@@ -433,7 +629,10 @@ export default function AuthAndOnboardingPage() {
                   Let Alphado know who it&apos;s working for.
                 </p>
 
-                <form onSubmit={handleNameSubmit} className="mt-7 space-y-3.5 text-left">
+                <form
+                  onSubmit={handleNameSubmit}
+                  className="mt-7 space-y-3.5 text-left"
+                >
                   <div>
                     <label
                       htmlFor="first-name"
@@ -492,7 +691,7 @@ export default function AuthAndOnboardingPage() {
               </motion.div>
             )}
 
-            {/* STEP 4: ONBOARDING 2 — BUSINESS NAME */}
+            {/* STEP 5: ONBOARDING 3 — BUSINESS NAME */}
             {step === "business" && (
               <motion.div
                 key="step-business"
@@ -504,12 +703,11 @@ export default function AuthAndOnboardingPage() {
               >
                 <AlphadoLogoMark />
 
-                {/* Inline Step Progress Bar */}
                 <div className="mt-5 mx-auto max-w-[220px]">
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                     <motion.div
-                      initial={{ width: "33%" }}
-                      animate={{ width: "66%" }}
+                      initial={{ width: "50%" }}
+                      animate={{ width: "75%" }}
                       transition={{ type: "spring", stiffness: 220, damping: 24 }}
                       className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-600 via-violet-500 to-pink-500"
                     />
@@ -520,10 +718,14 @@ export default function AuthAndOnboardingPage() {
                   What&apos;s your business name?
                 </h1>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Alphado uses this when calling your customers and replying to DMs.
+                  Alphado uses this when calling your customers and replying to
+                  DMs.
                 </p>
 
-                <form onSubmit={handleBusinessSubmit} className="mt-7 text-left">
+                <form
+                  onSubmit={handleBusinessSubmit}
+                  className="mt-7 text-left"
+                >
                   <label
                     htmlFor="business-name"
                     className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300"
@@ -558,7 +760,7 @@ export default function AuthAndOnboardingPage() {
               </motion.div>
             )}
 
-            {/* STEP 5: ONBOARDING 3 — CONNECT INSTAGRAM (GLOWING GRADIENT ROUNDED RECTANGLE) */}
+            {/* STEP 6: ONBOARDING 4 — CONNECT INSTAGRAM -> STRAIGHT TO DASHBOARD */}
             {step === "instagram" && (
               <motion.div
                 key="step-instagram"
@@ -570,11 +772,10 @@ export default function AuthAndOnboardingPage() {
               >
                 <AlphadoLogoMark />
 
-                {/* Inline Step Progress Bar */}
                 <div className="mt-5 mx-auto max-w-[220px]">
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                     <motion.div
-                      initial={{ width: "66%" }}
+                      initial={{ width: "75%" }}
                       animate={{ width: "100%" }}
                       transition={{ type: "spring", stiffness: 220, damping: 24 }}
                       className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-600 via-violet-500 to-pink-500"
@@ -595,13 +796,11 @@ export default function AuthAndOnboardingPage() {
 
                 {/* Glowing Brand-Gradient Rounded Rectangle Card */}
                 <div className="relative mt-8">
-                  {/* Outer glowing halo matching our brand gradient */}
                   <div
                     aria-hidden="true"
                     className="ig-glow-border pointer-events-none absolute -inset-1 rounded-[30px] opacity-65 blur-xl dark:opacity-55"
                   />
 
-                  {/* Crisp animated glowing gradient rounded rectangle frame */}
                   <div className="ig-glow-border relative rounded-[28px] p-[2.5px] shadow-xl">
                     <div className="rounded-[25.5px] bg-white p-6 dark:bg-slate-900">
                       <div className="flex items-center justify-between gap-4">
@@ -621,7 +820,6 @@ export default function AuthAndOnboardingPage() {
                           </div>
                         </div>
 
-                        {/* Connect / Connected Button */}
                         <motion.button
                           whileHover={igState === "idle" ? { scale: 1.04 } : {}}
                           whileTap={igState === "idle" ? { scale: 0.96 } : {}}
@@ -669,95 +867,22 @@ export default function AuthAndOnboardingPage() {
                   </div>
                 </div>
 
-                {/* Finish CTA */}
+                {/* Go straight to Dashboard */}
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                   type="button"
-                  onClick={() => setStep("done")}
+                  onClick={handleEnterDashboard}
                   className={`mt-7 w-full rounded-full py-3.5 text-sm font-bold transition-all cursor-pointer ${
                     igState === "connected"
                       ? "btn-brand"
                       : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                   }`}
                 >
-                  {igState === "connected" ? "Finish Setup" : "Skip for now"}
+                  {igState === "connected"
+                    ? "Open Dashboard"
+                    : "Skip & Open Dashboard"}
                 </motion.button>
-              </motion.div>
-            )}
-
-            {/* STEP 6: WELCOME COMPLETE */}
-            {step === "done" && (
-              <motion.div
-                key="step-done"
-                initial={{ opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                className="text-center"
-              >
-                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-sky-100 via-indigo-100 to-pink-100 dark:from-sky-950 dark:via-indigo-950 dark:to-slate-900 border border-sky-200 dark:border-sky-500/30 shadow-md">
-                  <img
-                    src="/mascot-v2.png"
-                    alt="Alphado ready"
-                    className="h-20 w-20 object-contain"
-                  />
-                </div>
-
-                <div className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 border border-emerald-500/25 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Workspace Ready</span>
-                </div>
-
-                <h1 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">
-                  Welcome to Alphado, {firstName}!
-                </h1>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Your AI assistant for{" "}
-                  <strong className="font-semibold text-slate-900 dark:text-white">
-                    {businessName}
-                  </strong>{" "}
-                  is configured and ready to roll.
-                </p>
-
-                <div className="mt-6 space-y-2.5 rounded-3xl border border-slate-200 bg-white p-5 text-left text-xs dark:border-slate-800 dark:bg-slate-900">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Account</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {firstName} {lastName}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Email</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {email}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Business</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {businessName}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Instagram</span>
-                    <span
-                      className={`font-bold ${
-                        igState === "connected"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-slate-500 dark:text-slate-400"
-                      }`}
-                    >
-                      {igState === "connected" ? `${igHandle} • Connected` : "Not linked yet"}
-                    </span>
-                  </div>
-                </div>
-
-                <Link
-                  href="/"
-                  className="btn-brand mt-7 inline-flex w-full items-center justify-center rounded-full py-3.5 text-sm font-bold"
-                >
-                  Back to Home
-                </Link>
               </motion.div>
             )}
           </AnimatePresence>
